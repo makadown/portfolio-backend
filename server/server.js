@@ -1,56 +1,40 @@
 require('./config/config');
 
-const _ = require('lodash');
-const express = require('express');
-const bodyParser = require('body-parser');
-
-var {Proyecto} = require('./models/proyecto');
-
-var app = express();
 const port = process.env.PORT;
+// Requires
+var express = require('express');
+var mongoose = require('mongoose');
+var bodyParser = require('body-parser');
+
+// Inicializar variables
+var app = express();
 
 // middleware para CORS (ver https://enable-cors.org/server_expressjs.html)
 app.use(function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  res.header("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS");
-  next();
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    res.header("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS");
+    next();
 });
+/* Considerar también: https://github.com/expressjs/cors */
 
+// Body Parser
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.get('/proyectos', (req, res) => {
-  Proyecto.find().then((proyectos) => {
-    res.send({proyectos});
-  }, (e) => {
-    res.status(400).send(e);
-  });
-});
+// Importar rutas
+var proyectoRoutes = require('./routes/proyecto');
 
-app.get('/proyectos/:id', (req, res) => {
-  var id = req.params.id;
+mongoose.Promise = global.Promise;
+// Aquí jalo la bd ya sea mi local o la de la variable de entorno de heroku
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true });
 
-  if (!ObjectID.isValid(id)) {
-    return res.status(404).send();
-  }
+// Rutas
+app.use('/proyectos', proyectoRoutes);
 
-  Proyecto.findOne({
-    _id: id
-  }).then((proyecto) => {
-    if (!proyecto) {
-      return res.status(404).send();
-    }
-
-    res.send({proyecto});
-  }).catch((e) => {
-    res.status(400).send();
-  });
-});
-
-
-
+// Escuchar peticiones
 app.listen(port, () => {
-  console.log(`Started up at port ${port}`);
+    //console.log('Servidor Express online corriendo en: \x1b[32m%s\x1b[0m', ' puerto 3000');
+    console.log('Servidor NodeJS online');
 });
-
-module.exports = {app};
